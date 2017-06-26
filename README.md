@@ -6,6 +6,14 @@ Run R scripts from the command line in a persisted environment.
 
 * [plumber](https://github.com/trestletech/plumber)
 
+## Basic usage
+
+    $ Rscript server.r &
+
+    $ Rscript dispatch.r path/to/script1.r
+    
+    $ Rscript dispatch.r path/to/script2.r arg1 arg2
+
 ## The problem
 
 Consider the following R script, which prints out a sequence of values if a start and end for the sequence are provided via the commandline:
