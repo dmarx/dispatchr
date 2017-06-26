@@ -2,6 +2,10 @@
 
 Run R scripts from the command line in a persisted environment.
 
+## Requirements
+
+* [plumber](https://github.com/trestletech/plumber)
+
 ## The problem
 
 Consider the following R script, which prints out a sequence of values if a start and end for the sequence are provided via the commandline:
@@ -50,7 +54,7 @@ This is because every time we run Rscript, we're running it in a new environment
 
 ## The solution
 
-**dispatchr** resolves this issue by creating a simple webapp with [plumber](https://github.com/trestletech/plumber) (`server.r`) which defines an API with a single end-point (`api.r`). The script `dispatch.r` takes positional arguments and passes them to the server in a GET request. The first positional argument is assumed to be the path to a script that you want to run, and all other arguments are presumed to be arguments you want to make available to the script. Then, `api.r` finds the global environment (by default, plumber runs each GET request in a private environment), write a variable into the global environment to hold the commandline parameters we want to make available to the script, and then sources the desired script into the global environment.
+**dispatchr** resolves this issue by creating a simple plumber webapp (`server.r`) which defines an API with a single end-point (`api.r`). The script `dispatch.r` takes positional arguments and passes them to the server in a GET request. The first positional argument is assumed to be the path to a script that you want to run, and all other arguments are presumed to be arguments you want to make available to the script. Then, `api.r` finds the global environment (by default, plumber runs each GET request in a private environment), write a variable into the global environment to hold the commandline parameters we want to make available to the script, and then sources the desired script into the global environment.
 
 Our scripts can now assume that the `ARGS` variable exists. We could alternatively check to see if ARGS exists and populate it from the commandline if we want to be defensive. Here's what our modified scripts look like:
 
