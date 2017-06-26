@@ -35,7 +35,7 @@ Using **dispatchr**, you can pass the large object from step to step as though y
 
 ## How it works
 
-**dispatchr** resolves this issue by creating a simple plumber webapp (`server.r`) which defines an API with a single end-point (`api.r`). The script `dispatch.r` takes positional arguments and passes them to the server in a GET request. The first positional argument is assumed to be the path to a script that you want to run, and all other arguments are presumed to be arguments you want to make available to the script. Then, `api.r` finds the global environment (by default plumber runs each GET request in a private environment), write a variable named "`ARGS`" into the global environment to hold the commandline parameters we want to make available to the script, and then sources the desired script into the global environment where it can access `ARGS` and anything else it might need from previous scripts that were run in a similar fashion.
+**dispatchr** is just an extremely minimal webapp serving a REST API with a single end point. The webapp runs inside an R session. A supplementary script converts command line arguments into GET requests that hit the API. Through this API, we can issue `source()` calls into the webapp's environment, and assign positional arguments from the commandline into variables in the R environment.
 
 ## Demonstrations
 
