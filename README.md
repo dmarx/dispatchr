@@ -37,6 +37,14 @@ Using **dispatchr**, you can pass the large object from step to step as though y
 
 **dispatchr** is just an extremely minimal webapp serving a REST API with a single end point. The webapp runs inside an R session. A supplementary script converts command line arguments into GET requests that hit the API. Through this API, we can issue `source()` calls into the webapp's environment, and assign positional arguments from the commandline into variables in the R environment.
 
+### That sounds like an arbitrary code execution vulnerability
+
+It probably is. I never said this was a good idea.
+
+Anyway, the API is limited to two operations: issuing `source()` commands on the first argument (which is presumably the path to a file that already exists on the server), and assigning the positional arguments into a character string. I'm pretty confident there's only a vulnerability here if the malicious actor has the ability to write files to the server. If they already have that kind of access, you probably have bigger problems already.
+
+I plan to add authentication in the near future, which should help mitigate any security issues.
+
 ## Demonstrations
 
 ### Example 1: Simple object persistence
