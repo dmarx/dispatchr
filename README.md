@@ -167,13 +167,20 @@ Now let's pretend we want to make a change to the model formula, or how the targ
     
     .PHONY pipeline
     
+    # Run "make pipeline" to run the modeling pipeline
     pipeline: model.rdata
     
-    iris.rdata: read_data.r
-        Rscript dispatch.r read_data.r
+    # step 3
+    model.rdata: fit_model.r iris_t.rdata
+        Rscript dispatch.r fit_model.r
         
+    # step 2
     iris_t.rdata: make_target.r iris.rdata
         Rscript dispatch.r make_target.r
         
-    model.rdata: fit_model.r iris_t.rdata
-        Rscript dispatch.r fit_model.r
+    # step 1
+    iris.rdata: read_data.r
+        Rscript dispatch.r read_data.r
+        
+
+        
