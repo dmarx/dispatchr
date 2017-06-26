@@ -21,6 +21,10 @@ Kill the server to cleanup:
 
     $ kill $(ps -f | grep Rscript | awk 'NR==1{print $2}')
 
+Or if you're running this through cygwin:
+
+    $ ps -W | awk '/calc.exe/,NF=1' | xargs kill -f
+    
 ## The problem
 
 Sometimes loading things into the environment is expensive. If we have a large data object that we are manipulating across a series of scripts, saving the object to disk and then re-loading it in between every operation can significantly impact the overall processing time of the sequence. To get around this unnecessary overhead, it's not uncommon to wrap the entire sequence into a single script which runs the entire sequence from back to front. This is fine if all of the steps in the sequence need to be run, but if we only need to run some portion of the sequence (e.g. some data was updated or a script was changed, and we only need to refresh the objects from the middle of the sequence down) we need to add a significant amount of complexity to the pipeline script, or bite the bullet and just run the whole sequence. If we go with the latter option, we may ultimately be dealing with a longer processing time than if we had simply used something like Gnu Make to build our pipeline to begin with.
@@ -31,7 +35,7 @@ Using `dispatchr`, you can pass the large object from step to step as though you
 
 ## Detailed example
 
-### The problem
+### Example 1: The problem
 
 Consider the following R script, which prints out a sequence of values if a start and end for the sequence are provided via the commandline:
     
@@ -107,10 +111,69 @@ After we kick off the server (using `&` to run it in the background), running th
     $ Rscript dispatch.r tests/test2.r
     [1] 3 4 5 6 7 8 9
 
-To shutdown the backend server:
+### Example 2: a simple modeling pipeline
 
-    $ kill $(ps -f | grep Rscript | awk 'NR==1{print $2}')
+Consider a simple modeling pipeline in which we will get some data, add a target variable, and fit a model. Using the strategy above, for any given step in the sequence, we can check to see if the output of the previous step is in the environment already and only load if it is not:
 
-If you're using cygwin, do this instead:
+    # read_data.r
 
-    $ ps -W | awk '/calc.exe/,NF=1' | xargs kill -f
+    data(iris)
+
+    save(iris, file='iris.rdata')
+
+...
+
+    # make_target.r
+    
+    if(!exists('iris')){
+        load('iris.rdata')
+    }
+
+    iris_t=iris
+    iris_t$target <- iris_t$Species == 'versicolor'
+    iris_t$Species <- NULL
+
+    save(iris_t, file='iris_t.rdata')
+
+...
+
+    # fit_model.r
+
+    if(!exists('iris_t')){
+        load('iris_t.rdata')
+    }
+
+    feats <- names(iris_t)
+    feats <- feats[feats != 'target']
+
+    rhs <- paste(feats, collapse=' + ')
+    formula <- paste0('target ~ ', rhs)
+
+    model <- glm(formula, family=binomial, data=iris_t)
+
+    save(model, file='model.rdata')
+
+A simple way to build this pipeline would be to source each script in sequence in one R script, like so:
+
+    # ugly_pipeline.r
+    
+    source('read_data.r')
+    source('make_target.r')
+    source('fit_model.r')
+
+Now let's pretend we want to make a change to the model formula, or how the target variable is defined. If we run the full pipeline, we're going to re-run every single step of the sequence, including downloading the dataset. Instead, we could use Make to manage our pipeline and only rebuild files that are downstream of things that have changed. Furthermore, by incorporating dispatchr, we are able to use make to manage our pipeline while also eliminating the unnecessary overhead of loading objects that are already in our environment:
+
+    # Makefile
+    
+    .PHONY pipeline
+    
+    pipeline: model.rdata
+    
+    iris.rdata: read_data.r
+        Rscript dispatch.r read_data.r
+        
+    iris_t.rdata: make_target.r iris.rdata
+        Rscript dispatch.r make_target.r
+        
+    model.rdata: fit_model.r iris_t.rdata
+        Rscript dispatch.r fit_model.r
