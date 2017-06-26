@@ -1,7 +1,7 @@
 #* @get /source_file
 source_file <- function(fpath, ...){
   p = parent.env(environment())
-  ARGS = c()
+  assign("ARGS", c(), envir=p)
   n = length(list(...))
   if(n>2) {
     assign("ARGS", list(...)[3:n], envir=p)
