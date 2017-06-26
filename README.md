@@ -12,10 +12,10 @@ Consider the following R script, which prints out a sequence of values if a star
     
     # tests/test.r
     
-    ARGS<-commandArgs(TRUE)
+    ARGS <- commandArgs(TRUE)
     if(length(ARGS)>0){
       ARGS_num <- as.numeric(ARGS)
-      v = seq(ARGS_num[1], ARGS_num[2])
+      v <- seq(ARGS_num[1], ARGS_num[2])
       print(v)
     }
 
@@ -28,12 +28,12 @@ Let's say we want to spread this operation across multiple scripts that should b
 
     # tests/testA.r
 
-    ARGS<-commandArgs(TRUE)
+    ARGS <- commandArgs(TRUE)
 
     if(length(ARGS)>0){
       
       ARGS_num <- as.numeric(ARGS)
-      v = seq(ARGS_num[1], ARGS_num[2])
+      v <- seq(ARGS_num[1], ARGS_num[2])
     }
 
 and then
@@ -63,7 +63,6 @@ Our scripts can now assume that the `ARGS` variable exists. We could alternative
     if(!exists(ARGS)) ARGS <- commandArgs(TRUE)
 
     if(length(ARGS)>0){
-      print("args detected")
       ARGS <- as.numeric(ARGS)
       v <- seq(ARGS[1], ARGS[2])
     }
@@ -72,7 +71,6 @@ and
     
     # tests/test2.r
     
-    if(!exists(ARGS)) ARGS = commandArgs(TRUE)
     print(v)
 
 After we kick off the server (using `&` to run it in the background), running the modified scripts will get us the desired behavior:
@@ -83,6 +81,14 @@ After we kick off the server (using `&` to run it in the background), running th
     
     $ Rscript dispatch.r tests/test2.r
     [1] 3 4 5 6 7 8 9
+
+To shutdown the backend server:
+
+    $ kill $(ps -f | grep Rscript | awk 'NR==1{print $2}')
+
+If you're using cygwin, do this instead:
+
+    $ ps -W | awk '/calc.exe/,NF=1' | xargs kill -f
 
 ## Why is this useful?
 
