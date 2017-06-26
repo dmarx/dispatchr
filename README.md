@@ -31,11 +31,15 @@ Sometimes loading things into the environment is expensive. If we have a large d
 
 ## The solution
 
-Using `dispatchr`, you can pass the large object from step to step as though you were sourcing the scripts in an interactive R session, and only load necessary objects from disk if they weren't passed along from an earlier step in the sequence. This allows us to utilize intelligent pipelining tools like Gnu Make, while not having to worry about the additional i/o overhead that is normally associated with batch processing.
+Using **dispatchr**, you can pass the large object from step to step as though you were sourcing the scripts in an interactive R session, and only load necessary objects from disk if they weren't passed along from an earlier step in the sequence. This allows us to utilize intelligent pipelining tools like Gnu Make, while not having to worry about the additional i/o overhead that is normally associated with batch processing.
 
-## Detailed example
+## How it works
 
-### Example 1: The problem
+**dispatchr** resolves this issue by creating a simple plumber webapp (`server.r`) which defines an API with a single end-point (`api.r`). The script `dispatch.r` takes positional arguments and passes them to the server in a GET request. The first positional argument is assumed to be the path to a script that you want to run, and all other arguments are presumed to be arguments you want to make available to the script. Then, `api.r` finds the global environment (by default plumber runs each GET request in a private environment), write a variable named "`ARGS`" into the global environment to hold the commandline parameters we want to make available to the script, and then sources the desired script into the global environment where it can access `ARGS` and anything else it might need from previous scripts that were run in a similar fashion.
+
+## Demonstrations
+
+### Example 1: Simple object persistence
 
 Consider the following R script, which prints out a sequence of values if a start and end for the sequence are provided via the commandline:
     
@@ -81,11 +85,9 @@ If we run these two scripts one after the other, we'll get the following error:
 
 This is because every time we run Rscript, we're running it in a new environment. When we ran testA.r, we created a variable `v`, and then when Rscript exited the environment in which that variable was defined was destroyed. testB.r was then run in a completely new environment in which `v` had not been defined. 
 
-### The solution
+### With dispatchr
 
-**dispatchr** resolves this issue by creating a simple plumber webapp (`server.r`) which defines an API with a single end-point (`api.r`). The script `dispatch.r` takes positional arguments and passes them to the server in a GET request. The first positional argument is assumed to be the path to a script that you want to run, and all other arguments are presumed to be arguments you want to make available to the script. Then, `api.r` finds the global environment (by default plumber runs each GET request in a private environment), write a variable named "`ARGS`" into the global environment to hold the commandline parameters we want to make available to the script, and then sources the desired script into the global environment where it can access `ARGS` and anything else it might need from previous scripts that were run in a similar fashion.
-
-Our scripts can now assume that the `ARGS` variable exists. We could alternatively check to see if ARGS exists and populate it from the commandline if we want to be defensive. Here's what our modified scripts look like:
+If we want to run our scripts with dispatch.r, we need to re-write them to respect the `ARGS` variable, which we'll use to pass values from the command line into the environment. To be safe, we should also check to see if ARGS exists and populate it from the command line if it's not. Here's what our modified scripts look like:
 
     # tests/test1.r
     
@@ -161,13 +163,14 @@ A simple way to build this pipeline would be to source each script in sequence i
     source('make_target.r')
     source('fit_model.r')
 
-Now let's pretend we want to make a change to the model formula, or how the target variable is defined. If we run the full pipeline, we're going to re-run every single step of the sequence, including downloading the dataset. Instead, we could use Make to manage our pipeline and only rebuild files that are downstream of things that have changed. Furthermore, by incorporating dispatchr, we are able to use make to manage our pipeline while also eliminating the unnecessary overhead of loading objects that are already in our environment:
+### With dispatchr and Gnu Make
+
+Now let's pretend we want to make a change to the model formula, or how the target variable is defined. If we run the full pipeline, we're going to re-run every single step of the sequence, including downloading the dataset. Instead, we could use Make to manage our pipeline and only rebuild files that are downstream of things that have changed. Furthermore, by incorporating dispatchr, we are able to use Make to manage our pipeline while also eliminating the unnecessary overhead of loading objects that are already in our environment:
 
     # Makefile
     
     .PHONY pipeline
     
-    # Run "make pipeline" to run the modeling pipeline
     pipeline: model.rdata
     
     # step 3
@@ -183,4 +186,6 @@ Now let's pretend we want to make a change to the model formula, or how the targ
         Rscript dispatch.r read_data.r
         
 
-        
+Now, all we need to do to intelligently rebuild any objects that need to be updated is run:
+
+    $ make pipeline
