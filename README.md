@@ -1,4 +1,4 @@
-# dipatchr
+# dispatchr
 
 Run R scripts from the command line in a persisted environment.
 
