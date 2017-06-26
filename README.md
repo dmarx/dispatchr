@@ -8,14 +8,18 @@ Run R scripts from the command line in a persisted environment.
 
 ## Basic usage
 
+Start the backend server:
+
     $ Rscript server.r &
 
-    $ Rscript dispatch.r path/to/script1.r
-    
-    $ Rscript dispatch.r path/to/script2.r arg1 arg2
-    
-    $ kill $(ps -f | grep Rscript | awk 'NR==1{print $2}')
+Run script1.r. Then run script2.r in the same environment as script1.r, and pass the script some positional arguments:
 
+    $ Rscript dispatch.r path/to/script1.r
+    $ Rscript dispatch.r path/to/script2.r arg1 arg2
+
+Kill the server to cleanup:
+
+    $ kill $(ps -f | grep Rscript | awk 'NR==1{print $2}')
 
 ## The problem
 
