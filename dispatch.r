@@ -1,4 +1,3 @@
-
 # Theoretically I should be able to just do this with curl, but I'm having issues
 # getting curl to work properly in cygwin, so let's just use R instead.
 
